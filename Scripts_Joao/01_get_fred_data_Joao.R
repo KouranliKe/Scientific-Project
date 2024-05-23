@@ -34,7 +34,7 @@ data = data %>%
   filter(date>=start_date)%>%
   select_if(~ !any(is.na(.)))
 
-data <- subset(data, date <= end_date)
+data = subset(data, date <= end_date)
 
 data_reorder = data.frame(data["date"], data["CPIAUCSL"])
 data = subset(data, select= -c(date, CPIAUCSL))
