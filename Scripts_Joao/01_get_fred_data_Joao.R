@@ -36,8 +36,11 @@ data = data %>%
 
 data = subset(data, date <= end_date)
 
-data_reorder = data.frame(data["date"], data["CPIAUCSL"])
-data = subset(data, select= -c(date, CPIAUCSL))
-data = cbind(data_reorder, data); rm(data_reorder)
+# data_reorder = data.frame(data["date"], data["CPIAUCSL"])
+# data = subset(data, select= -c(date, CPIAUCSL))
+# data = cbind(data_reorder, data)
+# 
+rm(#data_reorder, 
+  data_raw, prices, prices_varlist, varlist, start_date, end_date, vars)
 
-save(data,file = "data_joao.rda")
+save(data, file = "data_joao.rda")

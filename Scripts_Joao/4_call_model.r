@@ -1,14 +1,16 @@
 rm(list = ls())
 library(tidyverse)
+library(sandwich)
 
 source("2_data_prep.r")
 source("3_rolling_window.r")
 source("functions.r")
+source("gw_function.r")
 
 
 #####
 ## The file with the forecasts will be saved with model_name
-model_name <- "f_arima_var_win"
+model_name <- "arima_var_win"
 ## The function called to run models is model_function, which is a function from functions.R
 model_function <- f_arima_var_win
 #####
@@ -25,16 +27,16 @@ rownames(data) <- as.character(dates)
 nwindows <- 52 # num. de janelas ou num. de previsões
 y_out <- tail(data[, "CPIAUCSL"], nwindows)
 model_list <- list()
-for_ind <- c(1, 3, 6) # 1:6
+for_ind <- 3 #c(1, 3, 6) # 1:6
 
 for (i in for_ind) {
-  model <- rolling_window_var_win(
+  model <- rolling_window(
     fn = model_function,
     df = data,
     nwindow = nwindows + i - 1,
     horizon = i,
     variable = "CPIAUCSL",
-    #n_lags = 6, # Comentar para arima
+    n_lags = 6, # Can use any value with arima since it will just be discarded
     w_min = 0.1,
     inc = 1
   )
@@ -52,10 +54,17 @@ forecasts_tail <- Reduce(
   x = lapply(model_list, function(x) head(x$forecast_tail, nwindows))
 ) %>% as.matrix()
 
-# plot de previsoes x valores reais
+# plotting forecasts vs actuals
 plot.ts(y_out)
 lines(forecasts_mean[, 1], col = 2)
 lines(forecasts_tail[, 1], col = 3)
+title("Inflation Forecasts vs. Actual Values")
+legend("bottomright",
+       legend = c("Actual", "Mean Forecast", "Tail Forecast"),
+       col = c("black", "red", "green"),
+       lty = 1,
+       cex = 0.7)
+
 
 # RMSE
 f_rmse <- function(x, y) {
@@ -87,6 +96,18 @@ for (i in seq_len(ncol(forecasts_tail))) {
   }
 }
 abline(h = 0)
+
+# GW test
+# load("variables/model_name.RData")
+
+gw_test <- gw.test(x = forecasts_tail[,1], # model 1
+        y = forecasts_mean[,1], # model 2
+        p = y_out, # actual values
+        T = length(data[, 'CPIAUCSL']), # sample size
+        tau = 1, # forecasting horizon
+        #method = 'HAC', # comment this line for tau = 1
+        #alternative = 'greater'
+        ) %>% print()
 
 # Saving some results
 
